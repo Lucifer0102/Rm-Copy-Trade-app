@@ -1,0 +1,965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>📈 MT5 Copy Trading System</title>
+
+  <!-- Axios + Socket.IO -->
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+
+  <style>
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 20px;
+      border-radius: 15px;
+      margin-bottom: 30px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: #667eea;
+    }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .status-badge {
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .status-active {
+            background: #4caf50;
+            color: white;
+        }
+
+        .status-inactive {
+            background: #f44336;
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 5px;
+            border-radius: 10px;
+        }
+
+        .tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 32px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            margin-bottom: 5px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .account-list {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .account-item {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: transform 0.2s;
+        }
+
+        .account-item:hover {
+            transform: translateX(5px);
+        }
+
+        .account-info {
+            flex: 1;
+        }
+
+        .account-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .account-details {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 20px 0;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .checkbox-group input {
+            margin-right: 8px;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 500;
+            animation: slideIn 0.3s ease;
+            z-index: 1000;
+        }
+
+        .notification.success {
+            background: #4caf50;
+        }
+
+        .notification.error {
+            background: #f44336;
+        }
+
+        .notification.info {
+            background: #2196f3;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .activity-log {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 15px;
+            height: 300px;
+            overflow-y: auto;
+        }
+
+        .log-item {
+            padding: 10px;
+            border-left: 3px solid #667eea;
+            margin-bottom: 10px;
+            background: #f9f9f9;
+        }
+
+        .log-time {
+            color: #666;
+            font-size: 12px;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo">
+                📈 MT5 Copy Trading System
+            </div>
+            <div id="copyStatus" class="status-badge status-inactive">
+                INACTIVE
+            </div>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</button>
+            <button class="tab" onclick="switchTab('accounts')">👥 Accounts</button>
+            <button class="tab" onclick="switchTab('settings')">⚙️ Settings</button>
+            <button class="tab" onclick="switchTab('history')">📜 History</button>
+        </div>
+
+        <!-- Dashboard Tab -->
+        <div id="dashboard" class="tab-content active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">Total Trades</div>
+                    <div class="stat-value" id="totalTrades">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Active Trades</div>
+                    <div class="stat-value" id="activeTrades">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Win Rate</div>
+                    <div class="stat-value" id="winRate">0%</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Total P&L</div>
+                    <div class="stat-value" id="totalPnL">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Today's Trades</div>
+                    <div class="stat-value" id="todayTrades">0</div>
+                </div>
+            </div>
+
+            <div class="control-panel">
+                <h3 style="margin-bottom: 20px;">Copy Trading Control</h3>
+                <button id="startBtn" class="btn btn-success" onclick="startCopying()">
+                    ▶️ Start Copying
+                </button>
+                <button id="stopBtn" class="btn btn-danger" onclick="stopCopying()" style="display:none;">
+                    ⏹️ Stop Copying
+                </button>
+                <button class="btn btn-primary" onclick="refreshData()">
+                    🔄 Refresh Data
+                </button>
+            </div>
+
+            <div class="control-panel">
+                <h3 style="margin-bottom: 20px;">Recent Activity</h3>
+                <div class="activity-log" id="activityLog">
+                    <div class="log-item">
+                        <div class="log-time">System started</div>
+                        <div>Waiting for activity...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Accounts Tab -->
+        <div id="accounts" class="tab-content">
+            <div class="control-panel">
+                <h3 style="margin-bottom: 20px;">Add New Account</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Login ID</label>
+                        <input type="text" id="accountLogin" placeholder="123456">
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" id="accountPassword" placeholder="Password">
+                    </div>
+                    <div class="form-group">
+                        <label>Server</label>
+                        <input type="text" id="accountServer" placeholder="MetaQuotes-Demo">
+                    </div>
+                    <div class="form-group">
+                        <label>Account Name</label>
+                        <input type="text" id="accountName" placeholder="My Account">
+                    </div>
+                    <div class="form-group">
+                        <label>Account Type</label>
+                        <select id="accountType">
+                            <option value="provider">Provider (Master)</option>
+                            <option value="receiver">Receiver (Slave)</option>
+                        </select>
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="addAccount()">
+                    ➕ Add Account
+                </button>
+            </div>
+
+            <div class="accounts-grid">
+                <div class="account-list">
+                    <h3 style="margin-bottom: 15px;">Provider Accounts</h3>
+                    <div id="providerAccounts"></div>
+                </div>
+                <div class="account-list">
+                    <h3 style="margin-bottom: 15px;">Receiver Accounts</h3>
+                    <div id="receiverAccounts"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings" class="tab-content">
+            <div class="control-panel">
+                <h3 style="margin-bottom: 20px;">Copy Trading Settings</h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Lot Mode</label>
+                        <select id="lotMode" onchange="updateLotModeFields()">
+                            <option value="same">Same as Provider</option>
+                            <option value="fixed">Fixed Lot</option>
+                            <option value="multiplier">Multiplier</option>
+                            <option value="ratio">Balance Ratio</option>
+                            <option value="risk">Risk Based</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="multiplierGroup">
+                        <label>Lot Multiplier</label>
+                        <input type="number" id="lotMultiplier" value="1.0" step="0.1">
+                    </div>
+                    <div class="form-group" id="fixedLotGroup" style="display:none;">
+                        <label>Fixed Lot Size</label>
+                        <input type="number" id="fixedLot" value="0.01" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Min Lot Size</label>
+                        <input type="number" id="minLot" value="0.01" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Max Lot Size</label>
+                        <input type="number" id="maxLot" value="100.0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label>Copy Interval (ms)</label>
+                        <input type="number" id="copyInterval" value="500">
+                    </div>
+                    <div class="form-group">
+                        <label>Magic Number</label>
+                        <input type="number" id="magicNumber" value="123456">
+                    </div>
+                    <div class="form-group">
+                        <label>Symbol Suffix</label>
+                        <input type="text" id="symbolSuffix" placeholder="e.g., .a">
+                    </div>
+                    <div class="form-group">
+                        <label>Symbol Prefix</label>
+                        <input type="text" id="symbolPrefix" placeholder="e.g., m.">
+                    </div>
+                </div>
+
+                <div class="checkbox-group">
+                    <label>
+                        <input type="checkbox" id="copyBuy" checked>
+                        Copy Buy Trades
+                    </label>
+                    <label>
+                        <input type="checkbox" id="copySell" checked>
+                        Copy Sell Trades
+                    </label>
+                    <label>
+                        <input type="checkbox" id="copyPending" checked>
+                        Copy Pending Orders
+                    </label>
+                    <label>
+                        <input type="checkbox" id="oppositeTrades">
+                        Opposite Trades
+                    </label>
+                    <label>
+                        <input type="checkbox" id="closeOnProviderClose" checked>
+                        Close on Provider Close
+                    </label>
+                </div>
+
+                <button class="btn btn-primary" onclick="saveSettings()">
+                    💾 Save Settings
+                </button>
+            </div>
+
+            <div class="control-panel">
+                <h3 style="margin-bottom: 20px;">Symbol Mapping</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Provider Symbol</label>
+                        <input type="text" id="providerSymbol" placeholder="EURUSD">
+                    </div>
+                    <div class="form-group">
+                        <label>Receiver Symbol</label>
+                        <input type="text" id="receiverSymbol" placeholder="EURUSD.a">
+                    </div>
+                    <div class="form-group">
+                        <label>Broker Name (Optional)</label>
+                        <input type="text" id="brokerName" placeholder="ICMarkets">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="addSymbolMapping()">
+                    ➕ Add Mapping
+                </button>
+                <div id="symbolMappings" style="margin-top: 20px;"></div>
+            </div>
+        </div>
+
+        <!-- History Tab -->
+        <div id="history" class="tab-content">
+            <div class="control-panel">
+                <h3>Trade History</h3>
+                <div id="tradeHistory" style="margin-top: 20px;">
+                    <p>Loading trade history...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        const API_URL = 'http://localhost:5000/api';
+        let socket = null;
+        let copyActive = false;
+        let accounts = [];
+        let settings = {};
+
+        // Initialize
+        window.onload = function() {
+            connectSocket();
+            loadAccounts();
+            loadSettings();
+            loadStats();
+        };
+
+        // WebSocket connection
+        function connectSocket() {
+            socket = io('http://localhost:5000');
+            
+            socket.on('connect', () => {
+                showNotification('Connected to server', 'success');
+                console.log('Connected to WebSocket');
+            });
+            
+            socket.on('disconnect', () => {
+                showNotification('Disconnected from server', 'error');
+            });
+            
+            socket.on('trade_copied', (data) => {
+                addActivityLog(`Trade copied: ${data.symbol} ${data.type} ${data.volume} lot`);
+                showNotification(`Trade copied: ${data.symbol}`, 'info');
+                loadStats();
+            });
+            
+            socket.on('error', (data) => {
+                showNotification(`Error: ${data.message}`, 'error');
+            });
+            
+            socket.on('copying_started', () => {
+                setCopyingStatus(true);
+            });
+            
+            socket.on('copying_stopped', () => {
+                setCopyingStatus(false);
+            });
+        }
+
+        // Tab switching
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+            
+            if (tabName === 'history') {
+                loadTradeHistory();
+            }
+        }
+
+        // Load accounts
+        async function loadAccounts() {
+            try {
+                const response = await axios.get(`${API_URL}/accounts`);
+                accounts = response.data.accounts;
+                renderAccounts();
+            } catch (error) {
+                console.error('Error loading accounts:', error);
+            }
+        }
+
+        // Render accounts
+        function renderAccounts() {
+            const providers = accounts.filter(a => a.account_type === 'provider');
+            const receivers = accounts.filter(a => a.account_type === 'receiver');
+            
+            document.getElementById('providerAccounts').innerHTML = providers.map(account => `
+                <div class="account-item">
+                    <div class="account-info">
+                        <div class="account-name">${account.name}</div>
+                        <div class="account-details">
+                            ${account.login} • Balance: $${(account.balance || 0).toFixed(2)}
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn ${account.enabled ? 'btn-success' : 'btn-danger'}" 
+                                onclick="toggleAccount(${account.id}, ${!account.enabled})"
+                                style="padding: 5px 10px; font-size: 12px;">
+                            ${account.enabled ? 'Active' : 'Disabled'}
+                        </button>
+                        <button class="btn btn-danger" 
+                                onclick="removeAccount(${account.id})"
+                                style="padding: 5px 10px; font-size: 12px;">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            document.getElementById('receiverAccounts').innerHTML = receivers.map(account => `
+                <div class="account-item">
+                    <div class="account-info">
+                        <div class="account-name">${account.name}</div>
+                        <div class="account-details">
+                            ${account.login} • Balance: $${(account.balance || 0).toFixed(2)}
+                        </div>
+                    </div>
+                    <div>
+                        <button class="btn ${account.enabled ? 'btn-success' : 'btn-danger'}" 
+                                onclick="toggleAccount(${account.id}, ${!account.enabled})"
+                                style="padding: 5px 10px; font-size: 12px;">
+                            ${account.enabled ? 'Active' : 'Disabled'}
+                        </button>
+                        <button class="btn btn-danger" 
+                                onclick="removeAccount(${account.id})"
+                                style="padding: 5px 10px; font-size: 12px;">
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Add account
+        async function addAccount() {
+            const account = {
+                login: document.getElementById('accountLogin').value,
+                password: document.getElementById('accountPassword').value,
+                server: document.getElementById('accountServer').value,
+                name: document.getElementById('accountName').value,
+                account_type: document.getElementById('accountType').value
+            };
+            
+            if (!account.login || !account.password || !account.server) {
+                showNotification('Please fill all required fields', 'error');
+                return;
+            }
+            
+            try {
+                const response = await axios.post(`${API_URL}/accounts`, account);
+                if (response.data.success) {
+                    showNotification('Account added successfully', 'success');
+                    loadAccounts();
+                    // Clear form
+                    document.getElementById('accountLogin').value = '';
+                    document.getElementById('accountPassword').value = '';
+                    document.getElementById('accountName').value = '';
+                }
+            } catch (error) {
+                showNotification('Failed to add account', 'error');
+            }
+        }
+
+        // Remove account
+        async function removeAccount(accountId) {
+            if (!confirm('Are you sure you want to remove this account?')) return;
+            
+            try {
+                await axios.delete(`${API_URL}/accounts/${accountId}`);
+                showNotification('Account removed', 'success');
+                loadAccounts();
+            } catch (error) {
+                showNotification('Failed to remove account', 'error');
+            }
+        }
+
+        // Toggle account
+        async function toggleAccount(accountId, enabled) {
+            try {
+                await axios.post(`${API_URL}/accounts/${accountId}/toggle`, { enabled });
+                loadAccounts();
+            } catch (error) {
+                console.error('Error toggling account:', error);
+            }
+        }
+
+        // Load settings
+        async function loadSettings() {
+            try {
+                const response = await axios.get(`${API_URL}/settings`);
+                settings = response.data.settings;
+                
+                // Populate form
+                document.getElementById('lotMode').value = settings.lot_mode || 'multiplier';
+                document.getElementById('lotMultiplier').value = settings.lot_multiplier || 1.0;
+                document.getElementById('fixedLot').value = settings.fixed_lot || 0.01;
+                document.getElementById('minLot').value = settings.min_lot || 0.01;
+                document.getElementById('maxLot').value = settings.max_lot || 100.0;
+                document.getElementById('copyInterval').value = settings.copy_interval || 500;
+                document.getElementById('magicNumber').value = settings.magic_number || 123456;
+                document.getElementById('symbolSuffix').value = settings.symbol_suffix || '';
+                document.getElementById('symbolPrefix').value = settings.symbol_prefix || '';
+                document.getElementById('copyBuy').checked = settings.copy_buy !== false;
+                document.getElementById('copySell').checked = settings.copy_sell !== false;
+                document.getElementById('copyPending').checked = settings.copy_pending !== false;
+                document.getElementById('oppositeTrades').checked = settings.opposite_trades === true;
+                document.getElementById('closeOnProviderClose').checked = settings.close_on_provider_close !== false;
+                
+                updateLotModeFields();
+                loadSymbolMappings();
+            } catch (error) {
+                console.error('Error loading settings:', error);
+            }
+        }
+
+        // Save settings
+        async function saveSettings() {
+            const newSettings = {
+                lot_mode: document.getElementById('lotMode').value,
+                lot_multiplier: parseFloat(document.getElementById('lotMultiplier').value),
+                fixed_lot: parseFloat(document.getElementById('fixedLot').value),
+                min_lot: parseFloat(document.getElementById('minLot').value),
+                max_lot: parseFloat(document.getElementById('maxLot').value),
+                copy_interval: parseInt(document.getElementById('copyInterval').value),
+                magic_number: parseInt(document.getElementById('magicNumber').value),
+                symbol_suffix: document.getElementById('symbolSuffix').value,
+                symbol_prefix: document.getElementById('symbolPrefix').value,
+                copy_buy: document.getElementById('copyBuy').checked,
+                copy_sell: document.getElementById('copySell').checked,
+                copy_pending: document.getElementById('copyPending').checked,
+                opposite_trades: document.getElementById('oppositeTrades').checked,
+                close_on_provider_close: document.getElementById('closeOnProviderClose').checked
+            };
+            
+            try {
+                await axios.post(`${API_URL}/settings`, newSettings);
+                showNotification('Settings saved successfully', 'success');
+            } catch (error) {
+                showNotification('Failed to save settings', 'error');
+            }
+        }
+
+        // Update lot mode fields
+        function updateLotModeFields() {
+            const mode = document.getElementById('lotMode').value;
+            document.getElementById('multiplierGroup').style.display = mode === 'multiplier' ? 'block' : 'none';
+            document.getElementById('fixedLotGroup').style.display = mode === 'fixed' ? 'block' : 'none';
+        }
+
+        // Load stats
+        async function loadStats() {
+            try {
+                const response = await axios.get(`${API_URL}/performance`);
+                const stats = response.data.stats;
+                
+                document.getElementById('totalTrades').textContent = stats.total_trades || 0;
+                document.getElementById('activeTrades').textContent = stats.active_trades || 0;
+                document.getElementById('winRate').textContent = (stats.win_rate || 0).toFixed(1) + '%';
+                document.getElementById('totalPnL').textContent = '$' + (stats.total_profit || 0).toFixed(2);
+                document.getElementById('todayTrades').textContent = stats.today_trades || 0;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        // Start copying
+        async function startCopying() {
+            try {
+                await axios.post(`${API_URL}/copy/start`);
+                setCopyingStatus(true);
+                showNotification('Copy trading started', 'success');
+            } catch (error) {
+                showNotification('Failed to start copying', 'error');
+            }
+        }
+
+        // Stop copying
+        async function stopCopying() {
+            try {
+                await axios.post(`${API_URL}/copy/stop`);
+                setCopyingStatus(false);
+                showNotification('Copy trading stopped', 'info');
+            } catch (error) {
+                showNotification('Failed to stop copying', 'error');
+            }
+        }
+
+        // Set copying status
+        function setCopyingStatus(active) {
+            copyActive = active;
+            const statusBadge = document.getElementById('copyStatus');
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            if (active) {
+                statusBadge.className = 'status-badge status-active';
+                statusBadge.textContent = 'COPYING ACTIVE';
+                startBtn.style.display = 'none';
+                stopBtn.style.display = 'inline-block';
+            } else {
+                statusBadge.className = 'status-badge status-inactive';
+                statusBadge.textContent = 'INACTIVE';
+                startBtn.style.display = 'inline-block';
+                stopBtn.style.display = 'none';
+            }
+        }
+
+        // Add activity log
+        function addActivityLog(message) {
+            const log = document.getElementById('activityLog');
+            const time = new Date().toLocaleTimeString();
+            const logItem = document.createElement('div');
+            logItem.className = 'log-item';
+            logItem.innerHTML = `
+                <div class="log-time">${time}</div>
+                <div>${message}</div>
+            `;
+            log.insertBefore(logItem, log.firstChild);
+            
+            // Keep only last 50 items
+            while (log.children.length > 50) {
+                log.removeChild(log.lastChild);
+            }
+        }
+
+        // Load trade history
+        async function loadTradeHistory() {
+            try {
+                const response = await axios.get(`${API_URL}/trades/history`);
+                const history = response.data.history;
+                
+                document.getElementById('tradeHistory').innerHTML = history.length > 0 
+                    ? history.map(trade => `
+                        <div class="log-item">
+                            <div class="log-time">${new Date(trade.timestamp).toLocaleString()}</div>
+                            <div>${trade.account_name} - ${trade.symbol} ${trade.type} ${trade.volume} lot - P&L: $${(trade.profit || 0).toFixed(2)}</div>
+                        </div>
+                    `).join('')
+                    : '<p>No trade history available</p>';
+            } catch (error) {
+                console.error('Error loading trade history:', error);
+            }
+        }
+
+        // Symbol mapping
+        async function loadSymbolMappings() {
+            try {
+                const response = await axios.get(`${API_URL}/symbol-mapping`);
+                const mappings = response.data.mappings;
+                
+                document.getElementById('symbolMappings').innerHTML = mappings.length > 0
+                    ? '<h4>Current Mappings:</h4>' + mappings.map(m => `
+                        <div style="padding: 10px; background: #f5f5f5; margin: 5px 0; border-radius: 5px; display: flex; justify-content: space-between;">
+                            <span>${m.provider_symbol} → ${m.receiver_symbol} ${m.broker_name ? `(${m.broker_name})` : ''}</span>
+                            <button class="btn btn-danger" style="padding: 2px 10px; font-size: 12px;" onclick="deleteSymbolMapping(${m.id})">✕</button>
+                        </div>
+                    `).join('')
+                    : '<p>No symbol mappings configured</p>';
+            } catch (error) {
+                console.error('Error loading symbol mappings:', error);
+            }
+        }
+
+        async function addSymbolMapping() {
+            const mapping = {
+                provider_symbol: document.getElementById('providerSymbol').value,
+                receiver_symbol: document.getElementById('receiverSymbol').value,
+                broker_name: document.getElementById('brokerName').value
+            };
+            
+            if (!mapping.provider_symbol || !mapping.receiver_symbol) {
+                showNotification('Please enter both symbols', 'error');
+                return;
+            }
+            
+            try {
+                await axios.post(`${API_URL}/symbol-mapping`, mapping);
+                showNotification('Symbol mapping added', 'success');
+                loadSymbolMappings();
+                // Clear form
+                document.getElementById('providerSymbol').value = '';
+                document.getElementById('receiverSymbol').value = '';
+                document.getElementById('brokerName').value = '';
+            } catch (error) {
+                showNotification('Failed to add symbol mapping', 'error');
+            }
+        }
+
+        async function deleteSymbolMapping(mappingId) {
+            try {
+                await axios.delete(`${API_URL}/symbol-mapping/${mappingId}`);
+                loadSymbolMappings();
+            } catch (error) {
+                console.error('Error deleting mapping:', error);
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 4000);
+        }
+
+        // Refresh data
+        function refreshData() {
+            loadAccounts();
+            loadStats();
+            showNotification('Data refreshed', 'info');
+        }
+
+        // Auto-refresh stats every 5 seconds
+        setInterval(() => {
+            if (copyActive) {
+                loadStats();
+            }
+        }, 5000);
+    </script>
+</body>
+</html>
